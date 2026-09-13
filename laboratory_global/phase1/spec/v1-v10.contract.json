@@ -1,0 +1,53 @@
+{
+  "schema_version": "1.0.0",
+  "status": "DESIGNED_NOT_VERIFIED",
+  "truth_states": ["DESIGNED", "TESTED", "VERIFIED", "AUTHORIZED", "ACTIVE", "BLOCKED", "FAILED_SAFE"],
+  "constitutional_rules": [
+    "Human authority remains superior for consequential actions.",
+    "Architecture may advance; runtime must never claim an unobserved state.",
+    "Execution success requires post-condition evidence, not process exit alone.",
+    "Known failures should become regression tests when reproducible.",
+    "Trust is capability-scoped, not agent-global.",
+    "No external affiliation is claimed without verifiable agreement."
+  ],
+  "provenance_required": ["event_id", "timestamp_utc", "actor", "action", "classification", "evidence_refs", "observed_state"],
+  "agent_anatomy_required": ["profile", "capabilities", "permissions", "relationships", "evidence_policy", "learning_policy", "human_authority"],
+  "risk_tiers": {
+    "R0": {"meaning": "read/analysis", "gate": "automatic"},
+    "R1": {"meaning": "reversible internal change", "gate": "automatic_with_evidence"},
+    "R2": {"meaning": "sensitive internal operation", "gate": "independent_review"},
+    "R3": {"meaning": "external consequence to people/data/infrastructure", "gate": "human_authorization"},
+    "R4": {"meaning": "money/critical production/security/regulated action", "gate": "explicit_high_assurance_human_gate"}
+  },
+  "guardian_states": ["CREATED", "PREFLIGHT", "BLOCKED", "DRY_RUN", "AUTHORIZED", "RUNNING", "VERIFYING", "VERIFIED", "RETRY_WAIT", "FAILED_SAFE", "ROLLING_BACK", "ROLLED_BACK", "ESCALATED", "COMPLETED"],
+  "idempotency": {
+    "required_for_side_effects": true,
+    "key_material": ["automation_version", "operation_identity", "target_identity"],
+    "duplicate_rule": "A completed key must not repeat a non-idempotent side effect without an explicit new operation identity."
+  },
+  "failure_taxonomy": ["TRANSIENT", "AUTHORIZATION", "CONFIGURATION", "CONFLICT", "DEPENDENCY", "VERIFICATION", "POLICY", "UNKNOWN"],
+  "retry_policy": {
+    "retryable": ["TRANSIENT"],
+    "bounded": true,
+    "backoff": "exponential_with_jitter",
+    "unsafe_side_effect_retry_requires_idempotency": true
+  },
+  "circuit_breaker": {
+    "enabled": true,
+    "default_failure_threshold": 3,
+    "default_open_seconds": 900,
+    "open_behavior": "FAILED_SAFE"
+  },
+  "versions": [
+    {"version": 1, "name": "Constitution", "promotion": "DESIGNED"},
+    {"version": 2, "name": "Canonical Structure", "promotion": "DESIGNED"},
+    {"version": 3, "name": "Provenance Core", "promotion": "DESIGNED"},
+    {"version": 4, "name": "Agent Anatomy Core", "promotion": "DESIGNED"},
+    {"version": 5, "name": "Risk R0-R4", "promotion": "DESIGNED"},
+    {"version": 6, "name": "Guardian Base", "promotion": "DESIGNED"},
+    {"version": 7, "name": "Idempotency Core", "promotion": "DESIGNED"},
+    {"version": 8, "name": "Failure Taxonomy", "promotion": "DESIGNED"},
+    {"version": 9, "name": "Retry Engine", "promotion": "DESIGNED"},
+    {"version": 10, "name": "Circuit Breaker / Failed Safe", "promotion": "DESIGNED"}
+  ]
+}
