@@ -1,0 +1,21 @@
+{
+  "schema_version": "haios.public-version-ledger.v1",
+  "generated_at": "2026-09-13T08:30:00Z",
+  "mode": "READ_ONLY_SNAPSHOT",
+  "runtime_claim": "NONE",
+  "continuity_rule": "Every ordinal 1..1000000000 is resolvable mathematically; only evidence-bearing/checkpoint versions are materialized here.",
+  "truth_rule": "PLANNED != BUILT != TESTED != VERIFIED != AUTHORIZED != ACTIVE",
+  "nodes": [
+    {"version_id":"V1","ordinal":1,"family":"GENESIS_CORE","epoch":"FOUNDATION","parent_version_id":null,"status":"PLANNED","materialized":true,"note":"Checkpoint identity only; historical runtime evidence is not asserted by this snapshot."},
+    {"version_id":"V10","ordinal":10,"family":"GENESIS_CORE","epoch":"FOUNDATION","parent_version_id":"V1","status":"PLANNED","materialized":true,"note":"Checkpoint identity only."},
+    {"version_id":"V100","ordinal":100,"family":"FOUNDATION_COMPLETE_TARGET","epoch":"FOUNDATION","parent_version_id":"V10","status":"PLANNED","materialized":true,"note":"V1-V100 roadmap target; implementation must be promoted version-by-version."},
+    {"version_id":"V1000","ordinal":1000,"family":"STABILIZATION","epoch":"STABILIZATION","parent_version_id":"V100","status":"PLANNED","materialized":true},
+    {"version_id":"V10000","ordinal":10000,"family":"AUTOMATION_SCALE","epoch":"AUTOMATION","parent_version_id":"V1000","status":"PLANNED","materialized":true},
+    {"version_id":"V100000","ordinal":100000,"family":"DISTRIBUTED_SYSTEMS","epoch":"DISTRIBUTED_SYSTEMS","parent_version_id":"V10000","status":"PLANNED","materialized":true},
+    {"version_id":"V1000000","ordinal":1000000,"family":"GLOBAL_INFRASTRUCTURE","epoch":"GLOBAL_INFRASTRUCTURE","parent_version_id":"V100000","status":"PLANNED","materialized":true},
+    {"version_id":"V10000000","ordinal":10000000,"family":"MULTINODE_SCALE","epoch":"MULTINODE_SCALE","parent_version_id":"V1000000","status":"PLANNED","materialized":true},
+    {"version_id":"V25000000","ordinal":25000000,"family":"HAIOS_V25M","epoch":"PLANETARY_FEDERATION","parent_version_id":"V10000000","status":"PLANNED","materialized":true,"note":"V25M family/codename at its correct ordinal; not asserted ACTIVE."},
+    {"version_id":"V100000000","ordinal":100000000,"family":"PLANETARY_FEDERATION","epoch":"PLANETARY_FEDERATION","parent_version_id":"V25000000","status":"PLANNED","materialized":true},
+    {"version_id":"V1000000000","ordinal":1000000000,"family":"ULTRASCALE_RESEARCH","epoch":"ULTRASCALE_RESEARCH","parent_version_id":"V100000000","status":"PLANNED","materialized":true,"note":"Future research horizon, not an operational claim."}
+  ]
+}
