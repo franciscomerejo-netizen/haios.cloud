@@ -1,0 +1,38 @@
+name: HAIOS Edge Worker TEVV
+
+on:
+  pull_request:
+    paths:
+      - 'workers/edge/**'
+      - '.github/workflows/edge-worker-tevv.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-edge-contract:
+    name: Verify read-only edge contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax check Worker
+        run: node --check workers/edge/src/index.mjs
+      - name: Syntax check self-test
+        run: node --check workers/edge/tests/edge.selftest.mjs
+      - name: Run Worker contract self-test
+        run: node workers/edge/tests/edge.selftest.mjs
+      - name: Assert deployment identities are separated
+        shell: bash
+        run: |
+          grep -q '"name": "haios-edge-api"' workers/edge/wrangler.jsonc
+          grep -q '"name": "haios-cloud"' wrangler.jsonc
+          echo "DUAL_ROUTE_IDENTITY_CHECK=PASS"
+
+# Deployment is intentionally absent here.
+# After TEVV and explicit human authorization, a separate deployment workflow
+# may publish workers/edge/wrangler.jsonc and bind api.haios.cloud.
