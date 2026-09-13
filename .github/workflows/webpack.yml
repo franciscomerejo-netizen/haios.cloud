@@ -1,28 +1,50 @@
-name: NodeJS with Webpack
+name: HAIOS Webpack Diagnostic (Manual)
 
+# HAIOS Public Alpha is built by scripts/build-public-site.mjs.
+# Webpack is not a production dependency at this stage, so this diagnostic
+# is manual and cannot create false-red CI on pushes to main.
 on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
-  build:
+  diagnostic:
+    name: Webpack diagnostic
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        node-version: [18.x, 20.x, 22.x]
-
     steps:
-    - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ matrix.node-version }}
+      - name: Detect Webpack project
+        id: detect
+        shell: bash
+        run: |
+          if [[ -f webpack.config.js || -f webpack.config.cjs || -f webpack.config.mjs ]]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+            echo "WEBPACK_PROJECT_DETECTED"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "WEBPACK_NOT_CONFIGURED: diagnostic skipped without failure"
+          fi
 
-    - name: Build
-      run: |
-        npm install
-        npx webpack
+      - name: Setup Node.js 22
+        if: steps.detect.outputs.configured == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.x"
+
+      - name: Install dependencies
+        if: steps.detect.outputs.configured == 'true'
+        run: |
+          if [[ -f package-lock.json ]]; then npm ci; else npm install; fi
+
+      - name: Build Webpack project
+        if: steps.detect.outputs.configured == 'true'
+        run: npx webpack
+
+      - name: Result
+        run: |
+          echo "HAIOS_WEBPACK_DIAGNOSTIC_COMPLETE"
+          echo "Canonical Public Alpha build remains scripts/build-public-site.mjs."
