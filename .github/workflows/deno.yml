@@ -1,42 +1,49 @@
-# This workflow uses actions that are not certified by GitHub.
-# They are provided by a third-party and are governed by
-# separate terms of service, privacy policy, and support
-# documentation.
+name: HAIOS Deno Diagnostic (Manual)
 
-# This workflow will install Deno then run `deno lint` and `deno test`.
-# For more information see: https://github.com/denoland/setup-deno
-
-name: Deno
-
+# HAIOS does not currently use Deno as a required production build path.
+# This workflow is intentionally manual so unrelated pushes to main cannot
+# create false-red CI signals. It runs only when explicitly requested.
 on:
-  push:
-    branches: ["main"]
-  pull_request:
-    branches: ["main"]
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  test:
+  diagnostic:
+    name: Deno diagnostic
     runs-on: ubuntu-latest
-
     steps:
-      - name: Setup repo
+      - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Detect Deno project
+        id: detect
+        shell: bash
+        run: |
+          if [[ -f deno.json || -f deno.jsonc ]]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+            echo "DENO_PROJECT_DETECTED"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "DENO_NOT_CONFIGURED: diagnostic skipped without failure"
+          fi
+
       - name: Setup Deno
-        # uses: denoland/setup-deno@v1
-        uses: denoland/setup-deno@61fe2df320078202e33d7d5ad347e7dcfa0e8f31  # v1.1.2
+        if: steps.detect.outputs.configured == 'true'
+        uses: denoland/setup-deno@61fe2df320078202e33d7d5ad347e7dcfa0e8f31 # v1.1.2
         with:
           deno-version: v1.x
 
-      # Uncomment this step to verify the use of 'deno fmt' on each commit.
-      # - name: Verify formatting
-      #   run: deno fmt --check
-
-      - name: Run linter
+      - name: Lint
+        if: steps.detect.outputs.configured == 'true'
         run: deno lint
 
-      - name: Run tests
+      - name: Test
+        if: steps.detect.outputs.configured == 'true'
         run: deno test -A
+
+      - name: Result
+        run: |
+          echo "HAIOS_DENO_DIAGNOSTIC_COMPLETE"
+          echo "This workflow is not a production deployment gate unless Deno becomes an approved HAIOS runtime dependency."
