@@ -1,24 +1,40 @@
 name: HAIOS Public Alpha Gate and Deploy
+
 on:
+  push:
+    branches: [main]
+    paths:
+      - "public-portal/**"
+      - "scripts/**"
+      - "deployments/**"
+      - "roadmap/**"
+      - "architecture/version-ledger/**"
+      - "pocketbase/version-ledger.schema.json"
+      - ".github/workflows/deploy-pages.yml"
+      - "wrangler.jsonc"
   pull_request:
     branches: [main]
     paths:
       - "public-portal/**"
-      - "deployments/deploy-orchestrator.v24.mjs"
       - "scripts/**"
-      - "docs/compliance/**"
-      - "docs/security/**"
-      - "docs/release/**"
-      - "docs/governance/**"
+      - "deployments/**"
+      - "roadmap/**"
+      - "architecture/version-ledger/**"
+      - "pocketbase/version-ledger.schema.json"
       - ".github/workflows/deploy-pages.yml"
+      - "wrangler.jsonc"
   workflow_dispatch:
+
 permissions:
   contents: read
+
 concurrency:
   group: haios-public-alpha-${{ github.ref }}
   cancel-in-progress: false
+
 jobs:
   verify:
+    name: Verify public artifact
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -27,32 +43,39 @@ jobs:
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: "22"
-      - name: Syntax-check V24 control scripts
+      - name: Syntax-check control scripts
         run: |
           node --check deployments/deploy-orchestrator.v24.mjs
           node --check scripts/verify-legal-integrity.v24.mjs
           node --check public-portal/scripts/verify-public-state.mjs
+          node --check scripts/validate-version-ledger.mjs
           node --check scripts/build-public-site.mjs
           node --check scripts/audit-public-dist.mjs
-      - name: Verify V24 repository deployment preflight
+      - name: Verify repository deployment preflight
         run: node deployments/deploy-orchestrator.v24.mjs
-      - name: Verify public-state guardrails
-        run: cd public-portal && node scripts/verify-public-state.mjs
+      - name: Verify public-state and ledger guardrails
+        run: |
+          cd public-portal
+          node scripts/verify-public-state.mjs
+          cd ..
+          node scripts/validate-version-ledger.mjs public-portal/data/version-ledger.json
       - name: Verify legal-document integrity lock
         run: node scripts/verify-legal-integrity.v24.mjs
       - name: Build explicit public artifact allowlist
         run: node scripts/build-public-site.mjs
       - name: Audit emitted public artifact
         run: node scripts/audit-public-dist.mjs
-      - name: Preserve verified public candidate artifact
+      - name: Preserve verified candidate artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: haios-public-alpha-candidate-${{ github.event.pull_request.head.sha || github.sha }}
+          name: haios-public-alpha-candidate-${{ github.sha }}
           path: dist/public-alpha
           if-no-files-found: error
           retention-days: 30
+
   deploy:
-    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    name: Deploy Cloudflare Pages
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     needs: verify
     runs-on: ubuntu-latest
     environment: production
@@ -66,11 +89,13 @@ jobs:
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: "22"
-      - name: Re-run all repository gates
+      - name: Re-run release gates
         run: |
           node deployments/deploy-orchestrator.v24.mjs
-          cd public-portal && node scripts/verify-public-state.mjs
+          cd public-portal
+          node scripts/verify-public-state.mjs
           cd ..
+          node scripts/validate-version-ledger.mjs public-portal/data/version-ledger.json
           node scripts/verify-legal-integrity.v24.mjs
           node scripts/build-public-site.mjs
           node scripts/audit-public-dist.mjs
@@ -79,5 +104,5 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy dist/public-alpha --project-name=haios-global-alpha
+          command: pages deploy dist/public-alpha --project-name=haios-cloud
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
