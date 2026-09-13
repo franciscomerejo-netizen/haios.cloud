@@ -1,0 +1,107 @@
+{
+  "schema_version": "haios.version-ledger.schema.v1",
+  "status": "DESIGNED_NOT_APPLIED",
+  "target": "PocketBase-compatible collection specification",
+  "truth_rule": "PLANNED != BUILT != TESTED != VERIFIED != AUTHORIZED != ACTIVE",
+  "collections": [
+    {
+      "name": "version_ledger",
+      "type": "base",
+      "purpose": "Current materialized state for HAIOS versions. Public writes forbidden.",
+      "fields": [
+        {"name":"version_id","type":"text","required":true,"unique":true,"example":"V25000000"},
+        {"name":"ordinal","type":"number","required":true,"unique":true,"min":1,"max":1000000000},
+        {"name":"family","type":"text","required":true},
+        {"name":"epoch","type":"select","required":true,"values":["FOUNDATION","STABILIZATION","AUTOMATION","DISTRIBUTED_SYSTEMS","GLOBAL_INFRASTRUCTURE","MULTINODE_SCALE","PLANETARY_FEDERATION","ULTRASCALE_RESEARCH"]},
+        {"name":"parent_version_id","type":"text","required":false},
+        {"name":"status","type":"select","required":true,"values":["PLANNED","BUILT","TESTED","VERIFIED","AUTHORIZED","ACTIVE","OBSOLETE"]},
+        {"name":"spec_hash_sha256","type":"text","required":false,"pattern":"^[a-f0-9]{64}$"},
+        {"name":"build_hash_sha256","type":"text","required":false,"pattern":"^[a-f0-9]{64}$"},
+        {"name":"test_hash_sha256","type":"text","required":false,"pattern":"^[a-f0-9]{64}$"},
+        {"name":"evidence_hash_sha256","type":"text","required":false,"pattern":"^[a-f0-9]{64}$"},
+        {"name":"plan_hash_sha256","type":"text","required":false,"pattern":"^[a-f0-9]{64}$"},
+        {"name":"policy_version","type":"text","required":false},
+        {"name":"test_run_id","type":"text","required":false},
+        {"name":"run_id","type":"text","required":false},
+        {"name":"approval_id","type":"text","required":false},
+        {"name":"builder_subject","type":"text","required":false},
+        {"name":"verifier_subject","type":"text","required":false},
+        {"name":"created_at_utc","type":"date","required":true},
+        {"name":"built_at_utc","type":"date","required":false},
+        {"name":"tested_at_utc","type":"date","required":false},
+        {"name":"verified_at_utc","type":"date","required":false},
+        {"name":"authorized_at_utc","type":"date","required":false},
+        {"name":"activated_at_utc","type":"date","required":false}
+      ],
+      "rules": {
+        "listRule": "@request.auth.id != ''",
+        "viewRule": "@request.auth.id != ''",
+        "createRule": "@request.auth.id != '' && @request.auth.role = 'system'",
+        "updateRule": "@request.auth.id != '' && @request.auth.role = 'system'",
+        "deleteRule": null,
+        "note": "Translate role expression to the exact local auth schema before applying. No public mutation rule is authorized."
+      }
+    },
+    {
+      "name":"version_events",
+      "type":"base",
+      "purpose":"Append-only logical transition history.",
+      "fields":[
+        {"name":"event_id","type":"text","required":true,"unique":true},
+        {"name":"version_id","type":"text","required":true},
+        {"name":"from_state","type":"text","required":true},
+        {"name":"to_state","type":"text","required":true},
+        {"name":"actor_type","type":"select","required":true,"values":["HUMAN","AGENT","SYSTEM"]},
+        {"name":"actor_id","type":"text","required":true},
+        {"name":"run_id","type":"text","required":true},
+        {"name":"idempotency_key","type":"text","required":true,"unique":true},
+        {"name":"evidence_hash_sha256","type":"text","required":false,"pattern":"^[a-f0-9]{64}$"},
+        {"name":"timestamp_utc","type":"date","required":true}
+      ]
+    },
+    {
+      "name":"version_approvals",
+      "type":"base",
+      "purpose":"References externally validated human approval receipts; no secret material stored.",
+      "fields":[
+        {"name":"approval_id","type":"text","required":true,"unique":true},
+        {"name":"version_id","type":"text","required":true},
+        {"name":"plan_hash_sha256","type":"text","required":true,"pattern":"^[a-f0-9]{64}$"},
+        {"name":"policy_version","type":"text","required":true},
+        {"name":"run_id","type":"text","required":true},
+        {"name":"approver_subject","type":"text","required":true},
+        {"name":"issued_at_utc","type":"date","required":true},
+        {"name":"expires_at_utc","type":"date","required":true},
+        {"name":"signature_ref","type":"text","required":true},
+        {"name":"validation_status","type":"select","required":true,"values":["PENDING","VALID","INVALID","EXPIRED","REVOKED"]}
+      ]
+    },
+    {
+      "name":"version_findings",
+      "type":"base",
+      "purpose":"Regression memory and TEVV findings without permanent false blocking.",
+      "fields":[
+        {"name":"finding_id","type":"text","required":true,"unique":true},
+        {"name":"version_id","type":"text","required":true},
+        {"name":"severity","type":"select","required":true,"values":["INFO","LOW","MEDIUM","HIGH","CRITICAL"]},
+        {"name":"status","type":"select","required":true,"values":["OPEN","MITIGATED","ACCEPTED_RISK","CLOSED"]},
+        {"name":"blocks_promotion","type":"bool","required":true},
+        {"name":"error_code","type":"text","required":false},
+        {"name":"evidence_hash_sha256","type":"text","required":false},
+        {"name":"regression_test_id","type":"text","required":false},
+        {"name":"opened_at_utc","type":"date","required":true},
+        {"name":"resolved_at_utc","type":"date","required":false}
+      ]
+    }
+  ],
+  "application_invariants": [
+    "Transitions are sequential; no direct state jumps.",
+    "ACTIVE requires prior AUTHORIZED plus post-verification evidence.",
+    "Authorization is bound to exact plan_hash_sha256, policy_version and run_id.",
+    "No master key, password, API token or private key may be stored in this schema file or public snapshot.",
+    "Builder and verifier must differ for policy-designated critical components.",
+    "Only OPEN findings with blocks_promotion=true block promotion.",
+    "Every transition writes version_events with a unique idempotency_key.",
+    "The public portal consumes a sanitized read-only snapshot, never these collections directly."
+  ]
+}
