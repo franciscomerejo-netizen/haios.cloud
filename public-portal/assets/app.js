@@ -1,8 +1,14 @@
 const esc=v=>String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
 function tick(){const el=document.querySelector('#utcClock');if(el)el.textContent=new Date().toISOString().replace('T',' ').replace(/\.\d{3}Z$/,' UTC')}tick();setInterval(tick,1000);
 async function json(path){const r=await fetch(path,{cache:'no-store'});if(!r.ok)throw new Error(`${path}: HTTP ${r.status}`);return r.json()}
-async function load(){try{const[s,c]=await Promise.all([json('./data/status.json'),json('./data/countries.json')]);
+function shortVersion(n){if(n===1_000_000_000)return'V1B';if(n>=1_000_000&&n%1_000_000===0)return`V${n/1_000_000}M`;if(n>=1_000&&n%1_000===0)return`V${n/1_000}K`;return`V${n}`}
+async function load(){try{const[s,c,l]=await Promise.all([json('./data/status.json'),json('./data/countries.json'),json('./data/version-ledger.json')]);
 const set=(q,v)=>{const e=document.querySelector(q);if(e)e.textContent=v};
 set('#runtime',s.runtime?.state??'UNKNOWN');set('#evidence',s.runtime?.evidence_level??'UNKNOWN');set('#v8',s.v8?.status??'UNKNOWN');set('#baseline',s.baseline_v24?.status??'UNKNOWN');set('#hash',s.baseline_v24?.canonical_zip_sha256??'NOT_PUBLISHED');set('#unit',`${s.v24_1_transition?.static_unit_tests??'UNKNOWN'} — local logic only`);set('#pb',s.v24_1_transition?.pocketbase_integration??'UNKNOWN');
 const tbody=document.querySelector('#countries');if(tbody&&Array.isArray(c.nodes))tbody.innerHTML=c.nodes.map(n=>`<tr><td>${esc(n.name)}${n.public_name?` — ${esc(n.public_name)}`:''}</td><td>${esc(n.brand_status)}</td><td>${esc(n.runtime_state)}</td><td>${esc(n.evidence_level)}</td><td>${esc(n.brand_assets)}</td></tr>`).join('');
+const ledger=document.querySelector('#ledgerNodes');if(ledger&&Array.isArray(l.nodes))ledger.innerHTML=l.nodes.map(n=>`<button class="ledger-node" type="button" data-version="${esc(n.version_id)}"><b>${esc(shortVersion(n.ordinal))}</b><span>${esc(n.status)}</span><small>${Number(n.ordinal).toLocaleString('en-US')}</small></button>`).join('');
+const details=document.querySelector('#ledgerDetail');
+function show(v){if(!details)return;details.innerHTML=`<div><span>Version ID</span><b>${esc(v.version_id)}</b></div><div><span>Ordinal</span><b>${Number(v.ordinal).toLocaleString('en-US')}</b></div><div><span>Family</span><b>${esc(v.family)}</b></div><div><span>Epoch</span><b>${esc(v.epoch)}</b></div><div><span>State</span><b>${esc(v.status)}</b></div><div><span>Runtime claim</span><b>${esc(l.runtime_claim)}</b></div><p>${esc(v.note||'Checkpoint planned. Promotion requires evidence.')}</p>`}
+if(Array.isArray(l.nodes)&&l.nodes.length){show(l.nodes[0]);ledger?.addEventListener('click',e=>{const b=e.target.closest('[data-version]');if(!b)return;const v=l.nodes.find(x=>x.version_id===b.dataset.version);if(v)show(v)})}
+set('#ledgerMode',l.mode??'UNKNOWN');set('#ledgerCount',String(l.nodes?.length??0));
 }catch(e){console.error('Static public data could not be loaded. No runtime claim is inferred.',e);const r=document.querySelector('#runtime');if(r)r.textContent='UNKNOWN'}}load();
