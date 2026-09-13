@@ -1,0 +1,28 @@
+name: HAIOS Global Lab Phase I TEVV
+
+on:
+  pull_request:
+    paths:
+      - 'laboratory_global/phase1/**'
+      - '.github/workflows/global-lab-phase1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  phase1-tevv:
+    name: Verify V1-V10 Phase I
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax check reliability core
+        run: node --check laboratory_global/phase1/src/reliability-core.mjs
+      - name: Syntax check self-test
+        run: node --check laboratory_global/phase1/tests/phase1.selftest.mjs
+      - name: Run offline Phase I TEVV self-test
+        run: node laboratory_global/phase1/tests/phase1.selftest.mjs
