@@ -13,7 +13,8 @@ const required = [
   'assets/styles.css',
   'assets/app.js',
   'data/status.json',
-  'data/countries.json'
+  'data/countries.json',
+  'data/version-ledger.json'
 ];
 
 fs.rmSync(OUT, { recursive: true, force: true });
@@ -41,5 +42,5 @@ console.log(JSON.stringify({
   status: 'PASS',
   output_dir: 'dist/public-alpha',
   files: emitted,
-  note: 'Only whitelisted static assets are emitted. Repository scripts, README files, release metadata and internal controls are excluded from the deploy directory.'
+  note: 'Only whitelisted static assets are emitted. Version Ledger is a sanitized read-only snapshot; repository scripts, internal schemas, credentials and write controls are excluded.'
 }, null, 2));
